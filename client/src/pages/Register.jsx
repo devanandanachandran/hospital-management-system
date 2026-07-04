@@ -2,8 +2,13 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import API from '../api/axios';
 
-function Login() {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+function Register() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'patient'
+  });
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -16,13 +21,8 @@ function Login() {
     setError('');
 
     try {
-      const res = await API.post('/auth/login', formData);
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-
-      // redirect based on role
-      const role = res.data.user.role;
-      navigate(`/${role}-dashboard`);
+      await API.post('/auth/register', formData);
+      navigate('/login');
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong');
     }
@@ -30,9 +30,17 @@ function Login() {
 
   return (
     <div>
-      <h2>Login</h2>
+      <h2>Register</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="name"
+          placeholder="Full Name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+        />
         <input
           type="email"
           name="email"
@@ -49,11 +57,16 @@ function Login() {
           onChange={handleChange}
           required
         />
-        <button type="submit">Login</button>
+        <select name="role" value={formData.role} onChange={handleChange}>
+          <option value="patient">Patient</option>
+          <option value="doctor">Doctor</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button type="submit">Register</button>
       </form>
-      <p>Don't have an account? <Link to="/register">Register</Link></p>
+      <p>Already have an account? <Link to="/login">Login</Link></p>
     </div>
   );
 }
 
-export default Login;
+export default Register;
