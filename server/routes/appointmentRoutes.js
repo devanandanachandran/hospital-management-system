@@ -59,4 +59,31 @@ router.get('/all', protect, authorize('admin'), async (req, res) => {
   }
 });
 
+// Doctor updates an appointment (add prescription, change status)
+router.put('/:id', protect, authorize('doctor'), async (req, res) => {
+  try {
+    const { prescription, status } = req.body;
+
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    // Make sure this doctor owns this appointment
+    if (appointment.doctor.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to edit this appointment' });
+    }
+
+    appointment.prescription = prescription ?? appointment.prescription;
+    appointment.status = status ?? appointment.status;
+
+    await appointment.save();
+
+    res.json(appointment);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;

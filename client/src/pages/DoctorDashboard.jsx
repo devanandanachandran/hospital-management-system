@@ -1,5 +1,99 @@
-// PatientDashboard.jsx
+import { useState, useEffect } from 'react';
+import API from '../api/axios';
+
 function DoctorDashboard() {
-  return <h2>Doctor Dashboard</h2>;
+  const [appointments, setAppointments] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [prescription, setPrescription] = useState('');
+
+  const fetchAppointments = async () => {
+    try {
+      const res = await API.get('/appointments/doctor-appointments');
+      setAppointments(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const startEditing = (appt) => {
+    setEditingId(appt._id);
+    setPrescription(appt.prescription || '');
+  };
+
+  const handleSavePrescription = async (id) => {
+    try {
+      await API.put(`/appointments/${id}`, {
+        prescription,
+        status: 'completed'
+      });
+      setEditingId(null);
+      setPrescription('');
+      fetchAppointments();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleConfirm = async (id) => {
+    try {
+      await API.put(`/appointments/${id}`, { status: 'confirmed' });
+      fetchAppointments();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
+  return (
+    <div>
+      <h2>Doctor Dashboard</h2>
+      <button onClick={handleLogout}>Logout</button>
+
+      <h3>My Appointments</h3>
+      {appointments.length === 0 ? (
+        <p>No appointments assigned</p>
+      ) : (
+        <ul>
+          {appointments.map((appt) => (
+            <li key={appt._id} style={{ marginBottom: '1rem' }}>
+              <p>Patient: {appt.patient?.name}</p>
+              <p>Date: {new Date(appt.date).toLocaleDateString()}</p>
+              <p>Reason: {appt.reason}</p>
+              <p>Status: {appt.status}</p>
+
+              {appt.status === 'pending' && (
+                <button onClick={() => handleConfirm(appt._id)}>Confirm Appointment</button>
+              )}
+
+              {editingId === appt._id ? (
+                <div>
+                  <textarea
+                    value={prescription}
+                    onChange={(e) => setPrescription(e.target.value)}
+                    placeholder="Write prescription..."
+                  />
+                  <button onClick={() => handleSavePrescription(appt._id)}>Save & Mark Completed</button>
+                </div>
+              ) : (
+                <button onClick={() => startEditing(appt)}>
+                  {appt.prescription ? 'Edit Prescription' : 'Add Prescription'}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
+
 export default DoctorDashboard;

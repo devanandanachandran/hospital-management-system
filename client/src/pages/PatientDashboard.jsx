@@ -83,7 +83,7 @@ function PatientDashboard() {
         <ul>
           {appointments.map((appt) => (
             <li key={appt._id}>
-              Dr. {appt.doctor?.name} — {new Date(appt.date).toLocaleDateString()} — {appt.reason} — Status: {appt.status}
+              Dr. {appt.doctor?.name} — {new Date(appt.date).toLocaleDateString()} — {appt.reason} — Status: {appt.status} - Prescription: {appt.prescription}
             </li>
           ))}
         </ul>
