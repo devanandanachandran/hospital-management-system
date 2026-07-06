@@ -6,7 +6,7 @@ function PatientDashboard() {
   const [doctors, setDoctors] = useState([]);
   const [formData, setFormData] = useState({ doctor: '', date: '', reason: '' });
   const [message, setMessage] = useState('');
-
+  
   const fetchAppointments = async () => {
     try {
       const res = await API.get('/appointments/my-appointments');
@@ -16,8 +16,15 @@ function PatientDashboard() {
     }
   };
 
+  const fetchDoctors = async () => {
+  const res = await API.get('/auth/doctors');
+  setDoctors(res.data);
+};
+
   useEffect(() => {
     fetchAppointments();
+    fetchDoctors();
+    
   }, []);
 
   const handleChange = (e) => {
@@ -50,14 +57,12 @@ function PatientDashboard() {
       <h3>Book an Appointment</h3>
       {message && <p>{message}</p>}
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="doctor"
-          placeholder="Doctor ID"
-          value={formData.doctor}
-          onChange={handleChange}
-          required
-        />
+        <select name="doctor" value={formData.doctor} onChange={handleChange} required>
+  <option value="">Select a doctor</option>
+  {doctors.map((doc) => (
+    <option key={doc._id} value={doc._id}>{doc.name}</option>
+  ))}
+</select>
         <input
           type="date"
           name="date"
