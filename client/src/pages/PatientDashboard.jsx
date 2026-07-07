@@ -6,7 +6,32 @@ function PatientDashboard() {
   const [doctors, setDoctors] = useState([]);
   const [formData, setFormData] = useState({ doctor: '', date: '', reason: '' });
   const [message, setMessage] = useState('');
-  
+  const [selectedDate, setSelectedDate] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
+
+const fetchSlots = async (doctorId, date) => {
+  if (!doctorId || !date) return;
+  try {
+    const res = await API.get(`/appointments/available-slots/${doctorId}?date=${date}`);
+    setAvailableSlots(res.data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+// call this whenever doctor or date changes
+const handleDoctorOrDateChange = (e) => {
+  const updated = { ...formData, [e.target.name]: e.target.value };
+  setFormData(updated);
+  fetchSlots(updated.doctor, selectedDate);
+};
+
+const handleDateChange = (e) => {
+  setSelectedDate(e.target.value);
+  fetchSlots(formData.doctor, e.target.value);
+};
+
+
   const fetchAppointments = async () => {
     try {
       const res = await API.get('/appointments/my-appointments');
@@ -57,19 +82,45 @@ function PatientDashboard() {
       <h3>Book an Appointment</h3>
       {message && <p>{message}</p>}
       <form onSubmit={handleSubmit}>
-        <select name="doctor" value={formData.doctor} onChange={handleChange} required>
+        <select
+            name="doctor"
+            value={formData.doctor}
+            onChange={handleDoctorOrDateChange}
+            required>
+
   <option value="">Select a doctor</option>
   {doctors.map((doc) => (
     <option key={doc._id} value={doc._id}>{doc.name}</option>
   ))}
 </select>
-        <input
-          type="date"
-          name="date"
-          value={formData.date}
-          onChange={handleChange}
-          required
-        />
+          <input
+           type="date"
+           value={selectedDate}
+           onChange={handleDateChange}
+           required
+          />
+
+                <select
+  name="date"
+  value={formData.date}
+  onChange={(e) =>
+    setFormData({ ...formData, date: e.target.value })
+  }
+  required
+>
+  <option value="">Select a time slot</option>
+
+  {availableSlots.map((slot) => (
+    <option key={slot} value={slot}>
+      {new Date(slot).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+      })}
+    </option>
+  ))}
+</select>
+
+
         <input
           type="text"
           name="reason"

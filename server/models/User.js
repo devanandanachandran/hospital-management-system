@@ -18,7 +18,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['patient', 'doctor', 'admin'],
     default: 'patient'
-  }
+  },
+     availableFrom: { type: String, default: '09:00' },
+  availableTo: { type: String, default: '17:00' },
+  slotDuration: { type: Number, default: 30 }
 }, { timestamps: true });
+
+
 
 module.exports = mongoose.model('User', userSchema);
