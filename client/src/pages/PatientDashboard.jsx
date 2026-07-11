@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import API from '../api/axios';
+import { Calendar, ClipboardList } from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
 
 function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
@@ -8,6 +10,12 @@ function PatientDashboard() {
   const [message, setMessage] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [activeTab, setActiveTab] = useState('book');
+  
+  const navItems = [
+    { key: 'book', label: 'Book Appointment', icon: Calendar },
+    { key: 'appointments', label: 'My Appointments', icon: ClipboardList },
+  ];
 
 const fetchSlots = async (doctorId, date) => {
   if (!doctorId || !date) return;
@@ -68,11 +76,7 @@ const handleDateChange = (e) => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
-  };
+  
 
   const handleCancel = async (id) => {
   const confirmed = window.confirm('Are you sure you want to cancel this appointment?');
@@ -87,10 +91,18 @@ const handleDateChange = (e) => {
  };
 
   return (
-    <div>
-      <h2>Patient Dashboard</h2>
-      <button onClick={handleLogout}>Logout</button>
+  <DashboardLayout
+    title="Patient Dashboard"
+    roleLabel="Patient"
+    navItems={navItems}
+    activeTab={activeTab}
+    setActiveTab={setActiveTab}
+    >
+      
+      
 
+      {activeTab === 'book' && (
+      <>
       <h3>Book an Appointment</h3>
       {message && <p>{message}</p>}
       <form onSubmit={handleSubmit}>
@@ -143,7 +155,11 @@ const handleDateChange = (e) => {
         />
         <button type="submit">Book Appointment</button>
       </form>
+       </>
+)}
 
+      {activeTab === 'appointments' && (
+      <>
       <h3>My Appointments</h3>
       {appointments.length === 0 ? (
         <p>No appointments yet</p>
@@ -160,10 +176,11 @@ const handleDateChange = (e) => {
           ))}
         </ul>
       )}
-    </div>
+      </>
+     )}
+        </DashboardLayout>
   );
 }
-
 
 
 export default PatientDashboard;
