@@ -74,6 +74,18 @@ const handleDateChange = (e) => {
     window.location.href = '/login';
   };
 
+  const handleCancel = async (id) => {
+  const confirmed = window.confirm('Are you sure you want to cancel this appointment?');
+  if (!confirmed) return;
+
+  try {
+    await API.put(`/appointments/${id}/cancel`);
+    fetchAppointments();
+  } catch (err) {
+    console.error(err);
+  }
+ };
+
   return (
     <div>
       <h2>Patient Dashboard</h2>
@@ -137,15 +149,21 @@ const handleDateChange = (e) => {
         <p>No appointments yet</p>
       ) : (
         <ul>
-          {appointments.map((appt) => (
+            {appointments.map((appt) => (
             <li key={appt._id}>
-              Dr. {appt.doctor?.name} — {new Date(appt.date).toLocaleDateString()} — {appt.reason} — Status: {appt.status} - Prescription: {appt.prescription}
-            </li>
+             Dr. {appt.doctor?.name} — {new Date(appt.date).toLocaleString()} — {appt.reason} — Status: {appt.status}
+            {appt.prescription && <p>Prescription: {appt.prescription}</p>}
+           {(appt.status === 'pending' || appt.status === 'confirmed') && (
+           <button onClick={() => handleCancel(appt._id)}>Cancel Appointment</button>
+            )}
+          </li>
           ))}
         </ul>
       )}
     </div>
   );
 }
+
+
 
 export default PatientDashboard;

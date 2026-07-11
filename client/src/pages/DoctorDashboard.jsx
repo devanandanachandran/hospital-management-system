@@ -53,45 +53,65 @@ function DoctorDashboard() {
     window.location.href = '/login';
   };
 
+  const groupByDate = (appts) => {
+  const groups = {};
+  appts.forEach((appt) => {
+    const dateKey = new Date(appt.date).toLocaleDateString();
+    if (!groups[dateKey]) groups[dateKey] = [];
+    groups[dateKey].push(appt);
+  });
+  return groups;
+  };
+
+const groupedAppointments = groupByDate(
+  appointments
+    .filter(a => a.status !== 'cancelled')
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  );
+
   return (
     <div>
       <h2>Doctor Dashboard</h2>
       <button onClick={handleLogout}>Logout</button>
 
-      <h3>My Appointments</h3>
-      {appointments.length === 0 ? (
-        <p>No appointments assigned</p>
-      ) : (
-        <ul>
-          {appointments.map((appt) => (
-            <li key={appt._id} style={{ marginBottom: '1rem' }}>
-              <p>Patient: {appt.patient?.name}</p>
-              <p>Date: {new Date(appt.date).toLocaleDateString()}</p>
-              <p>Reason: {appt.reason}</p>
-              <p>Status: {appt.status}</p>
+      <h3>My Schedule</h3>
+{Object.keys(groupedAppointments).length === 0 ? (
+  <p>No upcoming appointments</p>
+) : (
+  Object.entries(groupedAppointments).map(([date, appts]) => (
+    <div key={date} style={{ marginBottom: '1.5rem' }}>
+      <h4>{date}</h4>
+      <ul>
+        {appts.map((appt) => (
+          <li key={appt._id} style={{ marginBottom: '1rem' }}>
+            <p>{new Date(appt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — {appt.patient?.name}</p>
+            <p>Reason: {appt.reason}</p>
+            <p>Status: {appt.status}</p>
 
-              {appt.status === 'pending' && (
-                <button onClick={() => handleConfirm(appt._id)}>Confirm Appointment</button>
-              )}
+            {appt.status === 'pending' && (
+              <button onClick={() => handleConfirm(appt._id)}>Confirm Appointment</button>
+            )}
 
-              {editingId === appt._id ? (
-                <div>
-                  <textarea
-                    value={prescription}
-                    onChange={(e) => setPrescription(e.target.value)}
-                    placeholder="Write prescription..."
-                  />
-                  <button onClick={() => handleSavePrescription(appt._id)}>Save & Mark Completed</button>
-                </div>
-              ) : (
-                <button onClick={() => startEditing(appt)}>
-                  {appt.prescription ? 'Edit Prescription' : 'Add Prescription'}
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+            {editingId === appt._id ? (
+              <div>
+                <textarea
+                  value={prescription}
+                  onChange={(e) => setPrescription(e.target.value)}
+                  placeholder="Write prescription..."
+                />
+                <button onClick={() => handleSavePrescription(appt._id)}>Save & Mark Completed</button>
+              </div>
+            ) : (
+              <button onClick={() => startEditing(appt)}>
+                {appt.prescription ? 'Edit Prescription' : 'Add Prescription'}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))
+)}
     </div>
   );
 }

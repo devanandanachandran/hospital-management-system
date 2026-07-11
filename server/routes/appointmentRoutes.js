@@ -147,4 +147,31 @@ router.put('/:id', protect, authorize('doctor'), async (req, res) => {
   }
 });
 
+// Patient cancels their own appointment
+router.put('/:id/cancel', protect, authorize('patient'), async (req, res) => {
+  try {
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    // Make sure this patient owns this appointment
+    if (appointment.patient.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to cancel this appointment' });
+    }
+
+    if (appointment.status === 'completed') {
+      return res.status(400).json({ message: 'Cannot cancel a completed appointment' });
+    }
+
+    appointment.status = 'cancelled';
+    await appointment.save();
+
+    res.json({ message: 'Appointment cancelled', appointment });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;
