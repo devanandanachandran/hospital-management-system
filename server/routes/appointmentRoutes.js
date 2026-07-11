@@ -174,4 +174,20 @@ router.put('/:id/cancel', protect, authorize('patient'), async (req, res) => {
   }
 });
 
+// Doctor views a specific patient's full history with them
+router.get('/patient-history/:patientId', protect, authorize('doctor'), async (req, res) => {
+  try {
+    const history = await Appointment.find({
+      doctor: req.user.userId,
+      patient: req.params.patientId,
+      status: { $in: ['completed', 'confirmed', 'cancelled'] }
+    })
+      .sort({ date: -1 })
+      .populate('patient', 'name email');
+
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 module.exports = router;

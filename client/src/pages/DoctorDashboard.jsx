@@ -5,6 +5,25 @@ function DoctorDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [prescription, setPrescription] = useState('');
+  const [historyPatientId, setHistoryPatientId] = useState(null);
+  const [historyPatientName, setHistoryPatientName] = useState('');
+  const [patientHistory, setPatientHistory] = useState([]);
+
+const viewPatientHistory = async (patientId, patientName) => {
+  try {
+    const res = await API.get(`/appointments/patient-history/${patientId}`);
+    setPatientHistory(res.data);
+    setHistoryPatientId(patientId);
+    setHistoryPatientName(patientName);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const closeHistory = () => {
+  setHistoryPatientId(null);
+  setPatientHistory([]);
+};
 
   const fetchAppointments = async () => {
     try {
@@ -63,7 +82,7 @@ function DoctorDashboard() {
   return groups;
   };
 
-const groupedAppointments = groupByDate(
+  const groupedAppointments = groupByDate(
   appointments
     .filter(a => a.status !== 'cancelled')
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -75,7 +94,26 @@ const groupedAppointments = groupByDate(
       <button onClick={handleLogout}>Logout</button>
 
       <h3>My Schedule</h3>
-{Object.keys(groupedAppointments).length === 0 ? (
+      {historyPatientId && (
+  <div style={{ border: '1px solid #ccc', padding: '1rem', marginBottom: '1.5rem' }}>
+    <h4>History for {historyPatientName}</h4>
+    <button onClick={closeHistory}>Close</button>
+    {patientHistory.length === 0 ? (
+      <p>No past visits with this patient</p>
+    ) : (
+      <ul>
+        {patientHistory.map((visit) => (
+          <li key={visit._id}>
+            <p>{new Date(visit.date).toLocaleString()} — Status: {visit.status}</p>
+            <p>Reason: {visit.reason}</p>
+            {visit.prescription && <p>Prescription: {visit.prescription}</p>}
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+)}
+         {Object.keys(groupedAppointments).length === 0 ? (
   <p>No upcoming appointments</p>
 ) : (
   Object.entries(groupedAppointments).map(([date, appts]) => (
@@ -84,7 +122,15 @@ const groupedAppointments = groupByDate(
       <ul>
         {appts.map((appt) => (
           <li key={appt._id} style={{ marginBottom: '1rem' }}>
-            <p>{new Date(appt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — {appt.patient?.name}</p>
+            <p>
+              {new Date(appt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} —{' '}
+              <span
+                onClick={() => viewPatientHistory(appt.patient._id, appt.patient.name)}
+                style={{ color: 'blue', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+              {appt.patient?.name}
+              </span>
+            </p>
             <p>Reason: {appt.reason}</p>
             <p>Status: {appt.status}</p>
 
