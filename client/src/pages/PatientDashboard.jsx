@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import API from '../api/axios';
-import { Calendar, ClipboardList } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import StatusBadge from '../components/StatusBadge';
+import { Calendar,ClipboardList, Clock, FileText } from 'lucide-react';
+
 
 function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
@@ -102,82 +104,139 @@ const handleDateChange = (e) => {
       
 
       {activeTab === 'book' && (
-      <>
-      <h3>Book an Appointment</h3>
-      {message && <p>{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <select
+  <div className="max-w-lg">
+    <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <h2 className="text-base font-semibold text-slate-900 mb-1">Book an Appointment</h2>
+      <p className="text-sm text-slate-500 mb-5">Choose a doctor, date, and available time slot</p>
+
+      {message && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg px-3 py-2 mb-4">
+          {message}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Doctor</label>
+          <select
             name="doctor"
             value={formData.doctor}
             onChange={handleDoctorOrDateChange}
-            required>
+            required
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select a doctor</option>
+            {doctors.map((doc) => (
+              <option key={doc._id} value={doc._id}>{doc.name}</option>
+            ))}
+          </select>
+        </div>
 
-  <option value="">Select a doctor</option>
-  {doctors.map((doc) => (
-    <option key={doc._id} value={doc._id}>{doc.name}</option>
-  ))}
-</select>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
           <input
-           type="date"
-           value={selectedDate}
-           onChange={handleDateChange}
-           required
+            type="date"
+            value={selectedDate}
+            onChange={handleDateChange}
+            required
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
 
-                <select
-  name="date"
-  value={formData.date}
-  onChange={(e) =>
-    setFormData({ ...formData, date: e.target.value })
-  }
-  required
->
-  <option value="">Select a time slot</option>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Time Slot</label>
+          <select
+            name="date"
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            required
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select a time slot</option>
+            {availableSlots.map((slot) => (
+              <option key={slot} value={slot}>
+                {new Date(slot).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </option>
+            ))}
+          </select>
+          {formData.doctor && selectedDate && availableSlots.length === 0 && (
+            <p className="text-xs text-red-500 mt-1">No slots available for this date</p>
+          )}
+        </div>
 
-  {availableSlots.map((slot) => (
-    <option key={slot} value={slot}>
-      {new Date(slot).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-      })}
-    </option>
-  ))}
-</select>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Reason for Visit</label>
+          <input
+            type="text"
+            name="reason"
+            placeholder="e.g. Routine checkup"
+            value={formData.reason}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-
-        <input
-          type="text"
-          name="reason"
-          placeholder="Reason for visit"
-          value={formData.reason}
-          onChange={handleChange}
-          required
-        />
-        <button type="submit">Book Appointment</button>
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
+        >
+          Book Appointment
+        </button>
       </form>
-       </>
+    </div>
+  </div>
 )}
 
-      {activeTab === 'appointments' && (
-      <>
-      <h3>My Appointments</h3>
-      {appointments.length === 0 ? (
-        <p>No appointments yet</p>
-      ) : (
-        <ul>
-            {appointments.map((appt) => (
-            <li key={appt._id}>
-             Dr. {appt.doctor?.name} — {new Date(appt.date).toLocaleString()} — {appt.reason} — Status: {appt.status}
-            {appt.prescription && <p>Prescription: {appt.prescription}</p>}
-           {(appt.status === 'pending' || appt.status === 'confirmed') && (
-           <button onClick={() => handleCancel(appt._id)}>Cancel Appointment</button>
-            )}
-          </li>
-          ))}
-        </ul>
-      )}
-      </>
-     )}
+
+{activeTab === 'appointments' && (
+  <div className="space-y-3 max-w-2xl">
+    {appointments.length === 0 ? (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 text-sm">
+        No appointments yet. Book one to get started.
+      </div>
+    ) : (
+      appointments.map((appt) => (
+        <div key={appt._id} className="bg-white rounded-2xl border border-slate-200 p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h3 className="font-medium text-slate-900">Dr. {appt.doctor?.name}</h3>
+              <p className="text-sm text-slate-500">{appt.reason}</p>
+            </div>
+            <StatusBadge status={appt.status} />
+          </div>
+
+          <div className="flex items-center gap-4 text-sm text-slate-500 mb-3">
+            <span className="flex items-center gap-1.5">
+              <Calendar size={14} />
+              {new Date(appt.date).toLocaleDateString()}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Clock size={14} />
+              {new Date(appt.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+
+          {appt.prescription && (
+            <div className="flex items-start gap-1.5 text-sm text-slate-600 bg-slate-50 rounded-lg p-3 mb-3">
+              <FileText size={14} className="mt-0.5 flex-shrink-0" />
+              <span>{appt.prescription}</span>
+            </div>
+          )}
+
+          {(appt.status === 'pending' || appt.status === 'confirmed') && (
+            <button
+              onClick={() => handleCancel(appt._id)}
+              className="text-sm text-red-500 font-medium hover:underline"
+            >
+              Cancel Appointment
+            </button>
+          )}
+        </div>
+      ))
+    )}
+  </div>
+)}
         </DashboardLayout>
   );
 }
