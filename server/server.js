@@ -13,7 +13,7 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 const app = express();
 
 app.use(cors({
-  origin: 'https://hospital-management-system-9nidnwjyt-devanandana.vercel.app',
+  origin: 'https://hospital-management-system-two-phi.vercel.app/',
   credentials: true
 }));
 app.use(express.json());
