@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { UserPlus, ClipboardList } from 'lucide-react';
+import { UserPlus, ClipboardList, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import StatusBadge from '../components/StatusBadge';
 import API from '../api/axios';
@@ -14,10 +14,19 @@ function AdminDashboard() {
   const [historyPatientName, setHistoryPatientName] = useState('');
   const [patientHistory, setPatientHistory] = useState([]);
 
+  const [adminForm, setAdminForm] = useState({
+  name: '',
+  email: '',
+  password: ''
+});
+
+const [adminMessage, setAdminMessage] = useState('');
+
   const navItems = [
-    { key: 'overview', label: 'Overview', icon: ClipboardList },
-    { key: 'doctors', label: 'Manage Doctors', icon: UserPlus },
-  ];
+  { key: 'overview', label: 'Overview', icon: ClipboardList },
+  { key: 'doctors', label: 'Manage Doctors', icon: UserPlus },
+  { key: 'admins', label: 'Manage Admins', icon: ShieldCheck },
+];
 
   const viewPatientHistory = (patientId, patientName) => {
     const history = appointments.filter((appt) => appt.patient?._id === patientId);
@@ -50,6 +59,32 @@ function AdminDashboard() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleAdminChange = (e) => {
+  setAdminForm({
+    ...adminForm,
+    [e.target.name]: e.target.value
+  });
+};
+
+const handleCreateAdmin = async (e) => {
+  e.preventDefault();
+  setAdminMessage('');
+
+  try {
+    await API.post('/auth/create-admin', adminForm);
+    setAdminMessage('Admin account created successfully');
+    setAdminForm({
+      name: '',
+      email: '',
+      password: ''
+    });
+  } catch (err) {
+    setAdminMessage(
+      err.response?.data?.message || 'Something went wrong'
+    );
+  }
+};
+
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
     try {
@@ -61,6 +96,8 @@ function AdminDashboard() {
       setMessage(err.response?.data?.message || 'Something went wrong');
     }
   };
+
+  
 
   return (
     <DashboardLayout
@@ -166,6 +203,8 @@ function AdminDashboard() {
             </form>
           </div>
 
+          
+
           <div>
             <h3 className="text-sm font-semibold text-brand-500/70 uppercase tracking-wide mb-3">
               All Doctors ({doctors.length})
@@ -185,6 +224,80 @@ function AdminDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab === 'admins' && (
+      <div className="bg-white rounded-2xl border border-brand-100 p-6 animate-rise">
+  <h2 className="text-base font-semibold text-brand-900 mb-1">
+    Create Admin
+  </h2>
+
+  <p className="text-sm text-brand-500/70 mb-5">
+    Create another administrator account
+  </p>
+
+  {adminMessage && (
+    <div className="bg-brand-50 border border-brand-200 text-brand-700 text-sm rounded-lg px-3 py-2 mb-4">
+      {adminMessage}
+    </div>
+  )}
+
+  <form onSubmit={handleCreateAdmin} className="space-y-4">
+
+    <div>
+      <label className="block text-sm font-medium text-brand-700 mb-1">
+        Full Name
+      </label>
+
+      <input
+        type="text"
+        name="name"
+        value={adminForm.name}
+        onChange={handleAdminChange}
+        required
+        className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-brand-700 mb-1">
+        Email
+      </label>
+
+      <input
+        type="email"
+        name="email"
+        value={adminForm.email}
+        onChange={handleAdminChange}
+        required
+        className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-brand-700 mb-1">
+        Temporary Password
+      </label>
+
+      <input
+        type="password"
+        name="password"
+        value={adminForm.password}
+        onChange={handleAdminChange}
+        required
+        className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+      />
+    </div>
+
+    <button
+      type="submit"
+      className="w-full bg-gradient-to-br from-brand-600 to-brand-800 hover:shadow-lg hover:-translate-y-0.5 text-white text-sm font-semibold py-2.5 rounded-lg transition-all"
+    >
+      Create Admin Account
+    </button>
+
+  </form>
+</div>
       )}
 
       {historyPatientId && (

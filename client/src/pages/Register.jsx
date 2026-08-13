@@ -7,8 +7,7 @@ function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
-    role: 'patient'
+    password: ''
   });
 
   const [error, setError] = useState('');
@@ -99,19 +98,7 @@ function Register() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-brand-700/80 mb-1.5 tracking-wide">Role</label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full px-3.5 py-2.5 border border-brand-200 rounded-[10px] text-sm bg-white/80 focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
-              >
-                <option value="patient">Patient</option>
-                <option value="doctor">Doctor</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
+            
 
             <button
               type="submit"

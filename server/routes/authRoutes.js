@@ -8,24 +8,21 @@ const router = express.Router();
 // REGISTER
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body; // role no longer accepted from client
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create the user
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      role: role || 'patient'
+      role: 'patient' // hardcoded — the only role public registration can create
     });
 
     res.status(201).json({
@@ -102,6 +99,35 @@ router.post('/create-doctor', protect, authorize('admin'), async (req, res) => {
     res.status(201).json({
       message: 'Doctor account created successfully',
       doctorId: doctor._id
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+router.post('/create-admin', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const admin = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'admin'
+    });
+
+    res.status(201).json({
+      message: 'Admin account created successfully',
+      adminId: admin._id
     });
 
   } catch (error) {
