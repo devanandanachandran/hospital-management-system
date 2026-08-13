@@ -1,7 +1,7 @@
 function StatusBadge({ status }) {
   const styles = {
-    pending: 'bg-amber-50 text-amber-600 border-amber-200',
-    confirmed: 'bg-blue-50 text-blue-600 border-blue-200',
+    pending: 'bg-accent-100 text-accent-600 border-accent-300/60',
+    confirmed: 'bg-brand-50 text-brand-600 border-brand-200',
     completed: 'bg-emerald-50 text-emerald-600 border-emerald-200',
     cancelled: 'bg-red-50 text-red-500 border-red-200',
   };

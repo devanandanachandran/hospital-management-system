@@ -12,14 +12,14 @@ function DashboardLayout({ title, roleLabel, navItems, activeTab, setActiveTab, 
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-brand-50 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
-        <div className="p-5 border-b border-slate-200 flex items-center gap-2">
-          <div className="bg-blue-600 p-2 rounded-lg">
+      <aside className="w-64 bg-gradient-to-b from-brand-600 to-brand-800 flex flex-col">
+        <div className="p-5 flex items-center gap-2.5">
+          <div className="bg-white/15 p-2 rounded-lg">
             <LayoutDashboard className="text-white" size={20} />
           </div>
-          <span className="font-semibold text-slate-900">MediCare HMS</span>
+          <span className="font-semibold text-white">MediCare HMS</span>
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
@@ -27,10 +27,10 @@ function DashboardLayout({ title, roleLabel, navItems, activeTab, setActiveTab, 
             <button
               key={item.key}
               onClick={() => setActiveTab(item.key)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-medium transition-all ${
                 activeTab === item.key
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'text-slate-600 hover:bg-slate-50'
+                  ? 'bg-white/20 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.2)]'
+                  : 'text-white/70 hover:bg-white/10 hover:text-white'
               }`}
             >
               <item.icon size={18} />
@@ -39,10 +39,10 @@ function DashboardLayout({ title, roleLabel, navItems, activeTab, setActiveTab, 
           ))}
         </nav>
 
-        <div className="p-3 border-t border-slate-200">
+        <div className="p-3">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] text-sm font-semibold text-white bg-red-500/90 hover:bg-red-600 transition-colors"
           >
             <LogOut size={18} />
             Logout
@@ -52,16 +52,16 @@ function DashboardLayout({ title, roleLabel, navItems, activeTab, setActiveTab, 
 
       {/* Main content */}
       <div className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <header className="bg-white/80 backdrop-blur-md border-b border-brand-100 px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
-            <p className="text-sm text-slate-500">{roleLabel}</p>
+            <h1 className="text-lg font-semibold text-brand-900">{title}</h1>
+            <p className="text-sm text-brand-500/80">{roleLabel}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-medium">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-600 to-brand-800 text-white flex items-center justify-center text-sm font-medium">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm font-medium text-slate-700">{user?.name}</span>
+            <span className="text-sm font-medium text-brand-800">{user?.name}</span>
           </div>
         </header>
 
