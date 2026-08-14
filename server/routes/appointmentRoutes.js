@@ -190,4 +190,27 @@ router.get('/patient-history/:patientId', protect, authorize('doctor'), async (r
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+router.put('/:id/report', protect, authorize('doctor'), async (req, res) => {
+  try {
+    const { reportUrl, reportName } = req.body;
+    const appointment = await Appointment.findById(req.params.id);
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    if (appointment.doctor.toString() !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    appointment.reportUrl = reportUrl;
+    appointment.reportName = reportName;
+    await appointment.save();
+
+    res.json(appointment);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 module.exports = router;

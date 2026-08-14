@@ -233,6 +233,21 @@ function PatientDashboard() {
                   </div>
                 )}
 
+                {appt.reportUrl && (
+  
+   <a href={appt.reportUrl} 
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 mt-2"
+   >
+    📄 View {appt.reportName}
+  </a>
+)}
+
+                
+
+                
+
                 {(appt.status === 'pending' || appt.status === 'confirmed') && (
                   <button
                     onClick={() => handleCancel(appt._id)}
@@ -241,6 +256,8 @@ function PatientDashboard() {
                     Cancel Appointment
                   </button>
                 )}
+
+                
               </div>
             ))
           )}

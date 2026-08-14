@@ -29,7 +29,16 @@ const appointmentSchema = new mongoose.Schema({
   prescription: {
     type: String,
     default: ''
-  }
+  },
+  reportUrl: {
+  type: String,
+  default: ''
+},
+reportName: {
+  type: String,
+  default: ''
+}
+
 }, { timestamps: true });
 
 appointmentSchema.index({ doctor: 1, date: 1 }, { unique: true, partialFilterExpression: { status: { $ne: 'cancelled' } } });
