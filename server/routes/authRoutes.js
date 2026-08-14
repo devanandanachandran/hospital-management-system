@@ -145,4 +145,70 @@ router.get('/doctors', protect, async (req, res) => {
   }
 });
 
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
+
+// Request a password reset
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    // Always respond the same way, whether or not the user exists —
+    // prevents attackers from using this route to check which emails are registered
+    if (!user) {
+      return res.json({ message: 'If that email exists, a reset link has been sent' });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
+    await user.save();
+
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    await sendEmail(
+      user.email,
+      'Reset Your MediCare HMS Password',
+      `<p>Hi ${user.name},</p>
+       <p>Click the link below to reset your password. This link expires in 15 minutes.</p>
+       <a href="${resetLink}">${resetLink}</a>
+       <p>If you didn't request this, you can safely ignore this email.</p>`
+    );
+
+    res.json({ message: 'If that email exists, a reset link has been sent' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Actually reset the password using the token
+router.post('/reset-password/:token', async (req, res) => {
+  try {
+    const { password } = req.body;
+    const { token } = req.params;
+
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() } // token must not be expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Reset link is invalid or has expired' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await user.save();
+
+    res.json({ message: 'Password reset successfully' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 module.exports = router;
