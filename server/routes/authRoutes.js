@@ -211,4 +211,20 @@ router.post('/reset-password/:token', async (req, res) => {
   }
 });
 
+
+router.put('/availability', protect, authorize('doctor'), async (req, res) => {
+  try {
+    const { availableFrom, availableTo, slotDuration } = req.body;
+
+    const doctor = await User.findById(req.user.userId);
+    doctor.availableFrom = availableFrom;
+    doctor.availableTo = availableTo;
+    doctor.slotDuration = slotDuration;
+    await doctor.save();
+
+    res.json({ message: 'Availability updated', doctor });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 module.exports = router;

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Users, Upload } from 'lucide-react';
+import { Calendar, Users, Upload ,Clock} from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import StatusBadge from '../components/StatusBadge';
 import API from '../api/axios';
 import { uploadToCloudinary } from '../utils/uploadFile';
 import { generatePrescriptionPDF } from '../utils/generatePrescriptionPDF';
 import { Download } from 'lucide-react';
+
+
 
 function DoctorDashboard() {
   const [activeTab, setActiveTab] = useState('schedule');
@@ -19,7 +21,34 @@ function DoctorDashboard() {
 
   const navItems = [
     { key: 'schedule', label: 'My Schedule', icon: Calendar },
+    { key: 'availability', label: 'Availability', icon: Clock },
   ];
+
+  const [availability, setAvailability] = useState({
+  availableFrom: '09:00',
+  availableTo: '17:00',
+  slotDuration: 30
+});
+const [availMessage, setAvailMessage] = useState('');
+const [availLoading, setAvailLoading] = useState(false);
+
+const handleAvailabilityChange = (e) => {
+  setAvailability({ ...availability, [e.target.name]: e.target.value });
+};
+
+const handleSaveAvailability = async (e) => {
+  e.preventDefault();
+  setAvailLoading(true);
+  setAvailMessage('');
+  try {
+    await API.put('/auth/availability', availability);
+    setAvailMessage('Availability updated successfully');
+  } catch (err) {
+    setAvailMessage(err.response?.data?.message || 'Something went wrong');
+  } finally {
+    setAvailLoading(false);
+  }
+};
 
   const viewPatientHistory = async (patientId, patientName) => {
     try {
@@ -459,6 +488,82 @@ function DoctorDashboard() {
 
         </div>
       )}
+
+      {activeTab === 'availability' && (
+  <div className="max-w-md">
+    <div className="bg-white/75 backdrop-blur-xl border border-white/60 rounded-[20px] shadow-[0_20px_60px_-20px_rgba(0,0,0,0.25)] p-8">
+      <div className="w-11 h-11 rounded-[13px] bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center mb-4">
+        <Clock className="text-white" size={22} />
+      </div>
+      <h2 className="text-xl font-semibold text-brand-900">Set Your Availability</h2>
+      <p className="text-brand-500/80 text-sm mt-1 mb-6">
+        Patients will only be able to book within these hours
+      </p>
+
+      {availMessage && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-3 py-2 mb-4">
+          {availMessage}
+        </div>
+      )}
+
+      <form onSubmit={handleSaveAvailability} className="space-y-4">
+        <div>
+          <label className="block text-xs font-semibold text-brand-700/80 mb-1.5 tracking-wide">
+            Available From
+          </label>
+          <input
+            type="time"
+            name="availableFrom"
+            value={availability.availableFrom}
+            onChange={handleAvailabilityChange}
+            required
+            className="w-full px-3.5 py-2.5 border border-brand-200 rounded-[10px] text-sm bg-white/80 focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-brand-700/80 mb-1.5 tracking-wide">
+            Available Until
+          </label>
+          <input
+            type="time"
+            name="availableTo"
+            value={availability.availableTo}
+            onChange={handleAvailabilityChange}
+            required
+            className="w-full px-3.5 py-2.5 border border-brand-200 rounded-[10px] text-sm bg-white/80 focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-brand-700/80 mb-1.5 tracking-wide">
+            Slot Duration (minutes)
+          </label>
+          <select
+            name="slotDuration"
+            value={availability.slotDuration}
+            onChange={handleAvailabilityChange}
+            className="w-full px-3.5 py-2.5 border border-brand-200 rounded-[10px] text-sm bg-white/80 focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+          >
+            <option value={15}>15 minutes</option>
+            <option value={20}>20 minutes</option>
+            <option value={30}>30 minutes</option>
+            <option value={45}>45 minutes</option>
+            <option value={60}>60 minutes</option>
+          </select>
+        </div>
+
+        <button
+          type="submit"
+          disabled={availLoading}
+          className="w-full bg-gradient-to-br from-brand-600 to-brand-800 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:translate-y-0 text-white text-sm font-semibold py-3 rounded-[10px] transition-all shadow-[0_8px_20px_-8px_rgba(17,86,90,0.6)]"
+        >
+          {availLoading ? 'Saving...' : 'Save Availability'}
+        </button>
+      </form>
+    </div>
+  </div>
+)}
 
     </DashboardLayout>
   );
