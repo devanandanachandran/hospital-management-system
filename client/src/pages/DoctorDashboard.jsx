@@ -4,6 +4,8 @@ import DashboardLayout from '../components/DashboardLayout';
 import StatusBadge from '../components/StatusBadge';
 import API from '../api/axios';
 import { uploadToCloudinary } from '../utils/uploadFile';
+import { generatePrescriptionPDF } from '../utils/generatePrescriptionPDF';
+import { Download } from 'lucide-react';
 
 function DoctorDashboard() {
   const [activeTab, setActiveTab] = useState('schedule');
@@ -359,6 +361,16 @@ function DoctorDashboard() {
                             </button>
 
                           )}
+
+                          {appt.prescription && (
+  <button
+    onClick={() => generatePrescriptionPDF(appt)}
+    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 mt-2"
+  >
+    <Download size={14} />
+    Download Prescription PDF
+  </button>
+)}
 
                         </div>
 

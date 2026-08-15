@@ -3,6 +3,8 @@ import API from '../api/axios';
 import DashboardLayout from '../components/DashboardLayout';
 import StatusBadge from '../components/StatusBadge';
 import { Calendar, ClipboardList, Clock, FileText } from 'lucide-react';
+import { generatePrescriptionPDF } from '../utils/generatePrescriptionPDF';
+import { Download } from 'lucide-react';
 
 
 function PatientDashboard() {
@@ -232,6 +234,16 @@ function PatientDashboard() {
                     <span>{appt.prescription}</span>
                   </div>
                 )}
+
+                {appt.prescription && (
+  <button
+    onClick={() => generatePrescriptionPDF(appt)}
+    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 mt-2"
+  >
+    <Download size={14} />
+    Download Prescription PDF
+  </button>
+)}
 
                 {appt.reportUrl && (
   
