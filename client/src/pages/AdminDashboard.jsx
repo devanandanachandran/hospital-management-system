@@ -3,16 +3,17 @@ import { UserPlus, ClipboardList, ShieldCheck } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import StatusBadge from '../components/StatusBadge';
 import API from '../api/axios';
+import { useToast } from '../context/ToastContext';
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-  const [message, setMessage] = useState('');
   const [historyPatientId, setHistoryPatientId] = useState(null);
   const [historyPatientName, setHistoryPatientName] = useState('');
   const [patientHistory, setPatientHistory] = useState([]);
+  const { showToast } = useToast();
 
   const [adminForm, setAdminForm] = useState({
   name: '',
@@ -66,36 +67,50 @@ const [adminMessage, setAdminMessage] = useState('');
   });
 };
 
-const handleCreateAdmin = async (e) => {
+    const handleCreateAdmin = async (e) => {
   e.preventDefault();
   setAdminMessage('');
 
   try {
     await API.post('/auth/create-admin', adminForm);
-    setAdminMessage('Admin account created successfully');
+
+    showToast('Admin account created successfully');
+
     setAdminForm({
       name: '',
       email: '',
       password: ''
     });
   } catch (err) {
-    setAdminMessage(
-      err.response?.data?.message || 'Something went wrong'
+    showToast(
+      err.response?.data?.message || 'Something went wrong',
+      'error'
     );
   }
 };
 
-  const handleCreateDoctor = async (e) => {
-    e.preventDefault();
-    try {
-      await API.post('/auth/create-doctor', formData);
-      setMessage('Doctor created successfully');
-      setFormData({ name: '', email: '', password: '' });
-      fetchDoctors();
-    } catch (err) {
-      setMessage(err.response?.data?.message || 'Something went wrong');
-    }
-  };
+    const handleCreateDoctor = async (e) => {
+  e.preventDefault();
+
+  try {
+    await API.post('/auth/create-doctor', formData);
+
+    showToast('Doctor created successfully');
+
+    setFormData({
+      name: '',
+      email: '',
+      password: ''
+    });
+
+    fetchDoctors();
+  } catch (err) {
+    showToast(
+      err.response?.data?.message || 'Something went wrong',
+      'error'
+    );
+  }
+};
 
   
 
@@ -166,11 +181,7 @@ const handleCreateAdmin = async (e) => {
             <h2 className="text-base font-semibold text-brand-900 mb-1">Add Doctor</h2>
             <p className="text-sm text-brand-500/70 mb-5">Create a new doctor account for the system</p>
 
-            {message && (
-              <div className="bg-brand-50 border border-brand-200 text-brand-700 text-sm rounded-lg px-3 py-2 mb-4">
-                {message}
-              </div>
-            )}
+            
 
             <form onSubmit={handleCreateDoctor} className="space-y-4">
               <div>

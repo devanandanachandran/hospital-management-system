@@ -5,7 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import { Calendar, ClipboardList, Clock, FileText } from 'lucide-react';
 import { generatePrescriptionPDF } from '../utils/generatePrescriptionPDF';
 import { Download } from 'lucide-react';
-
+import { useToast } from '../context/ToastContext';
 
 function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
@@ -15,6 +15,7 @@ function PatientDashboard() {
   const [selectedDate, setSelectedDate] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [activeTab, setActiveTab] = useState('book');
+  const { showToast } = useToast();
 
   const navItems = [
     { key: 'book', label: 'Book Appointment', icon: Calendar },
@@ -65,29 +66,30 @@ function PatientDashboard() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await API.post('/appointments', formData);
-      setMessage('Appointment booked successfully');
-      setFormData({ doctor: '', date: '', reason: '' });
-      fetchAppointments();
-    } catch (err) {
-      setMessage(err.response?.data?.message || 'Something went wrong');
-    }
-  };
+    const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await API.post('/appointments', formData);
+    showToast('Appointment booked successfully');
+    setFormData({ doctor: '', date: '', reason: '' });
+    fetchAppointments();
+  } catch (err) {
+    showToast(err.response?.data?.message || 'Something went wrong', 'error');
+  }
+};
 
-  const handleCancel = async (id) => {
-    const confirmed = window.confirm('Are you sure you want to cancel this appointment?');
-    if (!confirmed) return;
+     const handleCancel = async (id) => {
+  const confirmed = window.confirm('Are you sure you want to cancel this appointment?');
+  if (!confirmed) return;
 
-    try {
-      await API.put(`/appointments/${id}/cancel`);
-      fetchAppointments();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  try {
+    await API.put(`/appointments/${id}/cancel`);
+    showToast('Appointment cancelled');
+    fetchAppointments();
+  } catch (err) {
+    showToast('Something went wrong', 'error');
+  }
+};
 
   const pendingCount = appointments.filter((a) => a.status === 'pending').length;
   const confirmedCount = appointments.filter((a) => a.status === 'confirmed').length;

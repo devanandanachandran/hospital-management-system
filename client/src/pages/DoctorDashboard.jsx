@@ -6,6 +6,7 @@ import API from '../api/axios';
 import { uploadToCloudinary } from '../utils/uploadFile';
 import { generatePrescriptionPDF } from '../utils/generatePrescriptionPDF';
 import { Download } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 
 
@@ -18,6 +19,7 @@ function DoctorDashboard() {
   const [historyPatientName, setHistoryPatientName] = useState('');
   const [patientHistory, setPatientHistory] = useState([]);
   const [uploadingId, setUploadingId] = useState(null);
+  const { showToast } = useToast();
 
   const navItems = [
     { key: 'schedule', label: 'My Schedule', icon: Calendar },
@@ -84,32 +86,46 @@ const handleSaveAvailability = async (e) => {
     setPrescription(appt.prescription || '');
   };
 
-  const handleSavePrescription = async (id) => {
-    try {
-      await API.put(`/appointments/${id}`, {
-        prescription,
-        status: 'completed'
-      });
+      const handleSavePrescription = async (id) => {
+  try {
+    await API.put(`/appointments/${id}`, {
+      prescription,
+      status: 'completed'
+    });
 
-      setEditingId(null);
-      setPrescription('');
-      fetchAppointments();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    showToast('Prescription saved successfully');
 
-  const handleConfirm = async (id) => {
-    try {
-      await API.put(`/appointments/${id}`, {
-        status: 'confirmed'
-      });
+    setEditingId(null);
+    setPrescription('');
+    fetchAppointments();
+  } catch (err) {
+    console.error(err);
 
-      fetchAppointments();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+    showToast(
+      err.response?.data?.message || 'Something went wrong',
+      'error'
+    );
+  }
+};
+
+     const handleConfirm = async (id) => {
+  try {
+    await API.put(`/appointments/${id}`, {
+      status: 'confirmed'
+    });
+
+    showToast('Appointment confirmed');
+    fetchAppointments();
+  } catch (err) {
+    console.error(err);
+    showToast(
+      err.response?.data?.message || 'Something went wrong',
+      'error'
+    );
+  }
+};
+
+  
 
   const groupByDate = (appts) => {
     const groups = {};
