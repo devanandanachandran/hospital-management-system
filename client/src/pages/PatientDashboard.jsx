@@ -2,23 +2,26 @@ import { useState, useEffect } from 'react';
 import API from '../api/axios';
 import DashboardLayout from '../components/DashboardLayout';
 import StatusBadge from '../components/StatusBadge';
-import { Calendar, ClipboardList, Clock, FileText } from 'lucide-react';
+import { Calendar, ClipboardList, Clock, FileText, ArrowLeft, Download } from 'lucide-react';
 import { generatePrescriptionPDF } from '../utils/generatePrescriptionPDF';
-import { Download } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import SearchInput from '../components/SearchInput';
+import { DEPARTMENT_ICONS } from '../utils/departmentIcons';
 
 function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [formData, setFormData] = useState({ doctor: '', date: '', reason: '' });
-  const [message, setMessage] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [activeTab, setActiveTab] = useState('book');
   const { showToast } = useToast();
   const [doctorSearch, setDoctorSearch] = useState('');
   const [apptSearch, setApptSearch] = useState('');
+
+  // Department browsing
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
 
   const navItems = [
     { key: 'book', label: 'Book Appointment', icon: Calendar },
@@ -55,56 +58,89 @@ function PatientDashboard() {
     }
   };
 
-  const fetchDoctors = async () => {
-    const res = await API.get('/auth/doctors');
-    setDoctors(res.data);
+  const fetchDepartments = async () => {
+    try {
+      const res = await API.get('/departments');
+      setDepartments(res.data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
     fetchAppointments();
-    fetchDoctors();
+    fetchDepartments();
   }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-    const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    await API.post('/appointments', formData);
-    showToast('Appointment booked successfully');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await API.post('/appointments', formData);
+      showToast('Appointment booked successfully');
+      setFormData({ doctor: '', date: '', reason: '' });
+      setSelectedDate('');
+      setAvailableSlots([]);
+      fetchAppointments();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Something went wrong', 'error');
+    }
+  };
+
+  const handleCancel = async (id) => {
+    const confirmed = window.confirm('Are you sure you want to cancel this appointment?');
+    if (!confirmed) return;
+
+    try {
+      await API.put(`/appointments/${id}/cancel`);
+      showToast('Appointment cancelled');
+      fetchAppointments();
+    } catch (err) {
+      showToast('Something went wrong', 'error');
+    }
+  };
+
+  // Department selection drives which doctors are loaded
+  const handleSelectDepartment = async (dept) => {
+    setSelectedDepartment(dept);
+    setDoctorSearch('');
     setFormData({ doctor: '', date: '', reason: '' });
-    fetchAppointments();
-  } catch (err) {
-    showToast(err.response?.data?.message || 'Something went wrong', 'error');
-  }
-};
+    setSelectedDate('');
+    setAvailableSlots([]);
 
-     const handleCancel = async (id) => {
-  const confirmed = window.confirm('Are you sure you want to cancel this appointment?');
-  if (!confirmed) return;
+    try {
+      const res = await API.get(`/auth/doctors?department=${dept._id}`);
+      setDoctors(res.data);
+    } catch (err) {
+      showToast('Could not load doctors for this department', 'error');
+    }
+  };
 
-  try {
-    await API.put(`/appointments/${id}/cancel`);
-    showToast('Appointment cancelled');
-    fetchAppointments();
-  } catch (err) {
-    showToast('Something went wrong', 'error');
-  }
-};
+  const handleBackToDepartments = () => {
+    setSelectedDepartment(null);
+    setDoctors([]);
+    setDoctorSearch('');
+    setFormData({ doctor: '', date: '', reason: '' });
+    setSelectedDate('');
+    setAvailableSlots([]);
+  };
 
-const filteredDoctors = doctors.filter((doc) =>
-  doc.name.toLowerCase().includes(doctorSearch.toLowerCase())
-);
+  const filteredDoctors = doctors.filter((doc) =>
+    doc.name.toLowerCase().includes(doctorSearch.toLowerCase())
+  );
 
-const filteredAppointments = appointments.filter((appt) =>
-  appt.doctor?.name?.toLowerCase().includes(apptSearch.toLowerCase()) ||
-  appt.reason?.toLowerCase().includes(apptSearch.toLowerCase())
-);
+  const filteredAppointments = appointments.filter((appt) =>
+    appt.doctor?.name?.toLowerCase().includes(apptSearch.toLowerCase()) ||
+    appt.reason?.toLowerCase().includes(apptSearch.toLowerCase())
+  );
 
   const pendingCount = appointments.filter((a) => a.status === 'pending').length;
   const confirmedCount = appointments.filter((a) => a.status === 'confirmed').length;
+
+  const todayStr = new Date().toISOString().split('T')[0];
 
   return (
     <DashboardLayout
@@ -131,101 +167,146 @@ const filteredAppointments = appointments.filter((appt) =>
 
       {activeTab === 'book' && (
         <div className="max-w-lg">
-          <div className="bg-white rounded-2xl border border-brand-100 p-6 animate-rise">
-            <h2 className="text-base font-semibold text-brand-900 mb-1">Book an Appointment</h2>
-            <p className="text-sm text-brand-500/70 mb-5">Choose a doctor, date, and available time slot</p>
+          {!selectedDepartment ? (
+            <div>
+              <h2 className="text-base font-semibold text-brand-900 mb-1">Choose a Department</h2>
+              <p className="text-sm text-brand-500/70 mb-5">Select a department to see available doctors</p>
 
-            {message && (
-              <div className="bg-brand-50 border border-brand-200 text-brand-700 text-sm rounded-lg px-3 py-2 mb-4">
-                {message}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-brand-700 mb-1">Doctor</label>
-                   <SearchInput
-  value={doctorSearch}
-  onChange={(e) => setDoctorSearch(e.target.value)}
-  placeholder="Search doctors..."
-/>
-
-<select name="doctor" value={formData.doctor} onChange={handleDoctorOrDateChange} required className="...">
-  <option value="">Select a doctor</option>
-  {filteredDoctors.map((doc) => (
-    <option key={doc._id} value={doc._id}>{doc.name}</option>
-  ))}
-</select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-brand-700 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={handleDateChange}
-                  required
-                  className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-brand-700 mb-1">Time Slot</label>
-                <select
-                  name="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
-                >
-                  <option value="">Select a time slot</option>
-                  {availableSlots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {new Date(slot).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </option>
-                  ))}
-                </select>
-                {formData.doctor && selectedDate && availableSlots.length === 0 && (
-                  <p className="text-xs text-red-500 mt-1">No slots available for this date</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-brand-700 mb-1">Reason for Visit</label>
-                <input
-                  type="text"
-                  name="reason"
-                  placeholder="e.g. Routine checkup"
-                  value={formData.reason}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
-                />
-              </div>
-
+              {departments.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-brand-100 p-8 text-center text-brand-500/70 text-sm">
+                  No departments available yet — check back soon
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {departments.map((dept) => {
+                    const Icon = DEPARTMENT_ICONS[dept.icon] || DEPARTMENT_ICONS.Stethoscope;
+                    return (
+                      <button
+                        key={dept._id}
+                        onClick={() => handleSelectDepartment(dept)}
+                        className="bg-white rounded-2xl border border-brand-100 p-5 text-left hover:-translate-y-0.5 hover:shadow-md transition-all animate-rise"
+                      >
+                        <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center mb-3">
+                          <Icon className="text-white" size={20} />
+                        </div>
+                        <p className="text-sm font-semibold text-brand-900">{dept.name}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-brand-100 p-6 animate-rise">
               <button
-                type="submit"
-                className="w-full bg-gradient-to-br from-brand-600 to-brand-800 hover:shadow-lg hover:-translate-y-0.5 text-white text-sm font-semibold py-2.5 rounded-lg transition-all"
+                onClick={handleBackToDepartments}
+                className="text-sm text-brand-600 hover:text-brand-700 flex items-center gap-1.5 mb-4 font-medium"
               >
-                Book Appointment
+                <ArrowLeft size={14} />
+                Back to Departments
               </button>
-            </form>
-          </div>
+
+              <h2 className="text-base font-semibold text-brand-900 mb-1">
+                Book with {selectedDepartment.name}
+              </h2>
+              <p className="text-sm text-brand-500/70 mb-5">Choose a doctor, date, and available time slot</p>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-brand-700 mb-1">Doctor</label>
+                  <SearchInput
+                    value={doctorSearch}
+                    onChange={(e) => setDoctorSearch(e.target.value)}
+                    placeholder="Search doctors..."
+                  />
+                  <select
+                    name="doctor"
+                    value={formData.doctor}
+                    onChange={handleDoctorOrDateChange}
+                    required
+                    className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+                  >
+                    <option value="">Select a doctor</option>
+                    {filteredDoctors.map((doc) => (
+                      <option key={doc._id} value={doc._id}>{doc.name}</option>
+                    ))}
+                  </select>
+                  {doctors.length === 0 && (
+                    <p className="text-xs text-brand-500/70 mt-1">
+                      No doctors currently in this department
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-brand-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={handleDateChange}
+                    min={todayStr}
+                    required
+                    className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-brand-700 mb-1">Time Slot</label>
+                  <select
+                    name="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                    className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+                  >
+                    <option value="">Select a time slot</option>
+                    {availableSlots.map((slot) => (
+                      <option key={slot} value={slot}>
+                        {new Date(slot).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </option>
+                    ))}
+                  </select>
+                  {formData.doctor && selectedDate && availableSlots.length === 0 && (
+                    <p className="text-xs text-red-500 mt-1">No slots available for this date</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-brand-700 mb-1">Reason for Visit</label>
+                  <input
+                    type="text"
+                    name="reason"
+                    placeholder="e.g. Routine checkup"
+                    value={formData.reason}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-gradient-to-br from-brand-600 to-brand-800 hover:shadow-lg hover:-translate-y-0.5 text-white text-sm font-semibold py-2.5 rounded-lg transition-all"
+                >
+                  Book Appointment
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
 
       {activeTab === 'appointments' && (
         <div className="space-y-3 max-w-2xl">
           <SearchInput
-  value={apptSearch}
-  onChange={(e) => setApptSearch(e.target.value)}
-  placeholder="Search by doctor or reason..."
-/>
+            value={apptSearch}
+            onChange={(e) => setApptSearch(e.target.value)}
+            placeholder="Search by doctor or reason..."
+          />
           {appointments.length === 0 ? (
             <div className="bg-white rounded-2xl border border-brand-100 p-8 text-center text-brand-500/70 text-sm">
               No appointments yet. Book one to get started.
             </div>
-            
           ) : (
             filteredAppointments.map((appt) => (
               <div key={appt._id} className="bg-white rounded-2xl border border-brand-100 p-5 hover:shadow-md transition-shadow">
@@ -256,40 +337,34 @@ const filteredAppointments = appointments.filter((appt) =>
                 )}
 
                 {appt.prescription && (
-  <button
-    onClick={() => generatePrescriptionPDF(appt)}
-    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 mt-2"
-  >
-    <Download size={14} />
-    Download Prescription PDF
-  </button>
-)}
+                  <button
+                    onClick={() => generatePrescriptionPDF(appt)}
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 mt-2"
+                  >
+                    <Download size={14} />
+                    Download Prescription PDF
+                  </button>
+                )}
 
                 {appt.reportUrl && (
-  
-   <a href={appt.reportUrl} 
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 mt-2"
-   >
-    📄 View {appt.reportName}
-  </a>
-)}
-
-                
-
-                
+                  <a
+                    href={appt.reportUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1.5 mt-2"
+                  >
+                    📄 View {appt.reportName}
+                  </a>
+                )}
 
                 {(appt.status === 'pending' || appt.status === 'confirmed') && (
                   <button
                     onClick={() => handleCancel(appt._id)}
-                    className="text-sm text-red-500 font-medium hover:underline"
+                    className="text-sm text-red-500 font-medium hover:underline mt-2"
                   >
                     Cancel Appointment
                   </button>
                 )}
-
-                
               </div>
             ))
           )}

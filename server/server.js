@@ -10,15 +10,20 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
+const departmentRoutes = require('./routes/departmentRoutes');
+
 const app = express();
 
+
+
 app.use(cors({
-  origin: '  http://localhost:5173',
+  origin: 'http://localhost:5173',
   credentials: true
 }));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
+app.use('/api/departments', departmentRoutes);
 app.get('/', (req, res) => {
   res.send('Hospital Management System API is running');
 });

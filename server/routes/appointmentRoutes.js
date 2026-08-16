@@ -30,6 +30,10 @@ router.get('/available-slots/:doctorId', protect, async (req, res) => {
       current.setMinutes(current.getMinutes() + doctor.slotDuration);
     }
 
+    // Drop any slot that's already in the past (matters when the chosen date is today)
+    const now = new Date();
+    const futureSlots = slots.filter(slot => slot > now);
+
     // Find already booked slots for this doctor on this date (excluding cancelled)
     const startOfDay = new Date(`${date}T00:00:00`);
     const endOfDay = new Date(`${date}T23:59:59`);
@@ -42,7 +46,7 @@ router.get('/available-slots/:doctorId', protect, async (req, res) => {
 
     const bookedTimes = bookedAppointments.map(appt => appt.date.getTime());
 
-    const availableSlots = slots.filter(slot => !bookedTimes.includes(slot.getTime()));
+    const availableSlots = futureSlots.filter(slot => !bookedTimes.includes(slot.getTime()));
 
     res.json(availableSlots);
   } catch (error) {
@@ -55,6 +59,12 @@ router.get('/available-slots/:doctorId', protect, async (req, res) => {
 router.post('/', protect, authorize('patient'), async (req, res) => {
   try {
     const { doctor, date, reason } = req.body;
+
+    // Reject anything in the past, regardless of what the client sent
+    const appointmentDate = new Date(date);
+    if (appointmentDate < new Date()) {
+      return res.status(400).json({ message: 'Cannot book an appointment in the past' });
+    }
 
     // Double-check this exact slot isn't already booked (race condition safety)
     const existing = await Appointment.findOne({

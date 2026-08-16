@@ -76,10 +76,10 @@ router.post('/login', async (req, res) => {
 
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Admin creates a doctor account
+// Admin creates a doctor account — now requires a department
 router.post('/create-doctor', protect, authorize('admin'), async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, department } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -93,7 +93,8 @@ router.post('/create-doctor', protect, authorize('admin'), async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      role: 'doctor'
+      role: 'doctor',
+      department: department || null
     });
 
     res.status(201).json({
@@ -135,11 +136,43 @@ router.post('/create-admin', protect, authorize('admin'), async (req, res) => {
   }
 });
 
-// Get all doctors (used for patient booking dropdown, admin views, etc.)
+// Get all doctors — optionally filter by department (?department=<id>)
+// Used for patient booking dropdown, admin views, etc.
 router.get('/doctors', protect, async (req, res) => {
   try {
-    const doctors = await User.find({ role: 'doctor' }).select('name email _id');
+    const filter = { role: 'doctor' };
+    if (req.query.department) {
+      filter.department = req.query.department;
+    }
+
+    const doctors = await User.find(filter)
+      .select('name email _id department')
+      .populate('department', 'name icon');
+
     res.json(doctors);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Admin removes a doctor — cancels their future pending/confirmed appointments first
+router.delete('/doctors/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const Appointment = require('../models/Appointment');
+    const doctor = await User.findById(req.params.id);
+
+    if (!doctor || doctor.role !== 'doctor') {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    await Appointment.updateMany(
+      { doctor: doctor._id, status: { $in: ['pending', 'confirmed'] } },
+      { status: 'cancelled' }
+    );
+
+    await User.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Doctor removed successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

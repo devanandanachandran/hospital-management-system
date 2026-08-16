@@ -15,23 +15,27 @@ const userSchema = new mongoose.Schema({
     required: true
   },
   resetToken: {
-  type: String,
-  default: null
-},
-resetTokenExpiry: {
-  type: Date,
-  default: null
-},
+    type: String,
+    default: null
+  },
+  resetTokenExpiry: {
+    type: Date,
+    default: null
+  },
   role: {
     type: String,
     enum: ['patient', 'doctor', 'admin'],
     default: 'patient'
   },
-     availableFrom: { type: String, default: '09:00' },
+  // Only meaningful for role: 'doctor'
+  department: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+    default: null
+  },
+  availableFrom: { type: String, default: '09:00' },
   availableTo: { type: String, default: '17:00' },
   slotDuration: { type: Number, default: 30 }
 }, { timestamps: true });
-
-
 
 module.exports = mongoose.model('User', userSchema);
