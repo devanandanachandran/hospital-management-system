@@ -6,6 +6,7 @@ import { Calendar, ClipboardList, Clock, FileText } from 'lucide-react';
 import { generatePrescriptionPDF } from '../utils/generatePrescriptionPDF';
 import { Download } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import SearchInput from '../components/SearchInput';
 
 function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
@@ -16,6 +17,8 @@ function PatientDashboard() {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [activeTab, setActiveTab] = useState('book');
   const { showToast } = useToast();
+  const [doctorSearch, setDoctorSearch] = useState('');
+  const [apptSearch, setApptSearch] = useState('');
 
   const navItems = [
     { key: 'book', label: 'Book Appointment', icon: Calendar },
@@ -91,6 +94,15 @@ function PatientDashboard() {
   }
 };
 
+const filteredDoctors = doctors.filter((doc) =>
+  doc.name.toLowerCase().includes(doctorSearch.toLowerCase())
+);
+
+const filteredAppointments = appointments.filter((appt) =>
+  appt.doctor?.name?.toLowerCase().includes(apptSearch.toLowerCase()) ||
+  appt.reason?.toLowerCase().includes(apptSearch.toLowerCase())
+);
+
   const pendingCount = appointments.filter((a) => a.status === 'pending').length;
   const confirmedCount = appointments.filter((a) => a.status === 'confirmed').length;
 
@@ -132,18 +144,18 @@ function PatientDashboard() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-brand-700 mb-1">Doctor</label>
-                <select
-                  name="doctor"
-                  value={formData.doctor}
-                  onChange={handleDoctorOrDateChange}
-                  required
-                  className="w-full px-3 py-2 border border-brand-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-brand-100 focus:border-brand-500 transition-all"
-                >
-                  <option value="">Select a doctor</option>
-                  {doctors.map((doc) => (
-                    <option key={doc._id} value={doc._id}>{doc.name}</option>
-                  ))}
-                </select>
+                   <SearchInput
+  value={doctorSearch}
+  onChange={(e) => setDoctorSearch(e.target.value)}
+  placeholder="Search doctors..."
+/>
+
+<select name="doctor" value={formData.doctor} onChange={handleDoctorOrDateChange} required className="...">
+  <option value="">Select a doctor</option>
+  {filteredDoctors.map((doc) => (
+    <option key={doc._id} value={doc._id}>{doc.name}</option>
+  ))}
+</select>
               </div>
 
               <div>
@@ -204,12 +216,18 @@ function PatientDashboard() {
 
       {activeTab === 'appointments' && (
         <div className="space-y-3 max-w-2xl">
+          <SearchInput
+  value={apptSearch}
+  onChange={(e) => setApptSearch(e.target.value)}
+  placeholder="Search by doctor or reason..."
+/>
           {appointments.length === 0 ? (
             <div className="bg-white rounded-2xl border border-brand-100 p-8 text-center text-brand-500/70 text-sm">
               No appointments yet. Book one to get started.
             </div>
+            
           ) : (
-            appointments.map((appt) => (
+            filteredAppointments.map((appt) => (
               <div key={appt._id} className="bg-white rounded-2xl border border-brand-100 p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div>

@@ -7,12 +7,13 @@ import { uploadToCloudinary } from '../utils/uploadFile';
 import { generatePrescriptionPDF } from '../utils/generatePrescriptionPDF';
 import { Download } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
-
+import SearchInput from '../components/SearchInput';
 
 
 function DoctorDashboard() {
   const [activeTab, setActiveTab] = useState('schedule');
   const [appointments, setAppointments] = useState([]);
+  const [apptSearch, setApptSearch] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [prescription, setPrescription] = useState('');
   const [historyPatientId, setHistoryPatientId] = useState(null);
@@ -143,11 +144,17 @@ const handleSaveAvailability = async (e) => {
     return groups;
   };
 
-  const groupedAppointments = groupByDate(
-    appointments
-      .filter((a) => a.status !== 'cancelled')
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
-  );
+     const filteredAppointments = appointments.filter((appt) =>
+  appt.patient?.name
+    ?.toLowerCase()
+    .includes(apptSearch.toLowerCase())
+);
+
+const groupedAppointments = groupByDate(
+  filteredAppointments
+    .filter((a) => a.status !== 'cancelled')
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+);
 
   const pendingCount = appointments.filter(
     (a) => a.status === 'pending'
@@ -236,6 +243,12 @@ const handleSaveAvailability = async (e) => {
           <h3 className="text-base font-semibold text-brand-900">
             My Schedule
           </h3>
+
+          <SearchInput
+  value={apptSearch}
+  onChange={(e) => setApptSearch(e.target.value)}
+  placeholder="Search by patient name..."
+/>
 
           {/* Patient History Modal */}
           {historyPatientId && (

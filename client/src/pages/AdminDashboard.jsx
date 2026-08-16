@@ -4,11 +4,13 @@ import DashboardLayout from '../components/DashboardLayout';
 import StatusBadge from '../components/StatusBadge';
 import API from '../api/axios';
 import { useToast } from '../context/ToastContext';
+import SearchInput from '../components/SearchInput';
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [apptSearch, setApptSearch] = useState('');
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [historyPatientId, setHistoryPatientId] = useState(null);
   const [historyPatientName, setHistoryPatientName] = useState('');
@@ -36,6 +38,11 @@ const [adminMessage, setAdminMessage] = useState('');
     setHistoryPatientName(patientName);
   };
 
+   const filteredAppointments = appointments.filter((appt) =>
+  appt.patient?.name?.toLowerCase().includes(apptSearch.toLowerCase()) ||
+  appt.doctor?.name?.toLowerCase().includes(apptSearch.toLowerCase())
+);
+    
   const closeHistory = () => {
     setHistoryPatientId(null);
     setPatientHistory([]);
@@ -143,13 +150,18 @@ const [adminMessage, setAdminMessage] = useState('');
 
           <div>
             <h3 className="text-sm font-semibold text-brand-500/70 uppercase tracking-wide mb-3">All Appointments</h3>
+              <SearchInput
+  value={apptSearch}
+  onChange={(e) => setApptSearch(e.target.value)}
+  placeholder="Search by patient or doctor..."
+/>
             <div className="space-y-3">
               {appointments.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-brand-100 p-8 text-center text-brand-500/70 text-sm">
                   No appointments in the system yet
                 </div>
               ) : (
-                appointments.map((appt) => (
+                filteredAppointments.map((appt) => (
                   <div key={appt._id} className="bg-white rounded-2xl border border-brand-100 p-5 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between mb-2">
                       <div>
