@@ -62,64 +62,76 @@ hospital-management-system/
 Clone the repository and install the dependencies.
 
 ### Frontend
+```text
 cd client
 npm install
 npm run dev
+```
 
 ### Backend
 Open another terminal:
+```text
 cd server
 npm install
 npm run dev
+```
 
 ## Environment Variables
 Create a .env file inside the server folder and add:
+```text
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 PORT=5000
+```
 
 ## User Roles
 
 ## Patient
 Patients can:
 
-Browse doctors and departments
-Search for doctors
-Book appointments
-View available time slots
-View appointment history
-Cancel appointments
-View prescriptions
-Download prescription PDFs
-View medical reports
+- Register and log in
+- Browse doctors and departments
+- Search for doctors
+- Book appointments
+- View available time slots
+- View their appointments
+- Search appointments by doctor or reason
+- Cancel appointments
+- View prescriptions
+- Download prescriptions as PDF
+- View medical reports
 
 ## Doctor
 Doctors can:
 
-View assigned appointments
-View patient information
-View patient history
-Update appointment status
-Add prescriptions
-Upload medical reports
+- Log in to their dashboard
+- View their appointments
+- Search appointments by patient name
+- Update appointment status
+- Add prescriptions
+- Upload medical reports
+- View patient appointment history
 
 ## Admin
 Admins can:
 
-View all appointments
-Create doctor accounts
-Remove doctors
-Create administrator accounts
-Create and manage departments
-Assign departments to doctors
+- View hospital statistics
+- View all appointments
+- Search appointments by patient or doctor
+- Add and remove doctors
+- Search doctors by name
+- Create admin accounts
+- Create and manage departments
+- Assign departments to doctors
 
 ## Database
 The application uses MongoDB for storing:
-Users
-Appointments
-Departments
-Prescriptions
-Medical report information
-Authentication
+- Users
+- Appointments
+- Departments
+- Prescriptions
+- Medical report information
+
+## Authentication
 
 Authentication is implemented using JSON Web Tokens (JWT), with role-based authorization for patients, doctors and administrators.
