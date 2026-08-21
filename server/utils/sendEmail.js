@@ -1,16 +1,10 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendEmail(to, subject, html) {
-  await transporter.sendMail({
-    from: `"MediCare HMS" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from: 'MediCare HMS <onboarding@resend.dev>',
     to,
     subject,
     html
